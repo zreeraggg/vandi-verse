@@ -915,7 +915,7 @@ $('share').onclick = async () => {
   const m = Math.floor(dist), title = G.titleFor(m);
   const dailyLabel = daily ? new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
   const blob = await makeCard({ m, title, daily: dailyLabel, shot, url: GAME_URL });
-  const text = `njan ${distLabel(m)} odi, Ninakku ${m + 1} m odaan pattuo? 😏`; // the message under the image
+  const text = `njan ${distLabel(m)} odi, Ninakku ${m + 1} m odaan pattuo? 😏\n${GAME_URL}`; // the message under the image; the link must live here, a shared PNG can't be clickable
   share(blob, text);
 };
 menuBest();
