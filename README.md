@@ -21,8 +21,6 @@
   <a href="https://github.com/zreeraggg/vandi-verse/stargazers"><img src="https://img.shields.io/github/stars/zreeraggg/vandi-verse?style=flat&logo=github" alt="GitHub stars"></a>
 </p>
 
-<p align="center"><sub>The play link is a temporary dev tunnel until the game gets a permanent home.</sub></p>
-
 <p align="center">
   <img src="docs/art/gameplay.gif" alt="Gameplay: the hero runs down the road collecting coins, jumps, and an auto rickshaw swerves across in front of him" width="640">
 </p>
@@ -152,7 +150,7 @@ test/, tools/           tests and the autoplay bot
 - [x] Daily road and weekly leaderboard
 - [x] Automatic low graphics for low-end phones
 - [x] Bot playtests to 10 km to catch impossible obstacle layouts
-- [ ] A permanent home for the game (and a real play link)
+- [x] Hosted on Cloudflare Pages, with the leaderboard on D1
 - [ ] Leaderboard checks against fake scores
 - [ ] New stretches after 3 km (a temple-festival elephant, a hartal road)
 - [ ] Near-miss rewards for close shaves with buses
