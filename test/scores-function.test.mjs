@@ -64,4 +64,11 @@ r = await onRequestGet({ env, request: new Request('https://x/api/scores?id=ffff
 assert.deepEqual((await r.json()).me, { rank: 1, name: 'bSahid/b', best: 77 });
 r = await onRequestGet({ env, request: new Request('https://x/api/scores') }); // no id: board only
 assert.equal((await r.json()).me, null);
+// Setup mistakes answer with a readable error, not a crash.
+let e = await onRequestGet({ env: {}, request: new Request('https://x/api/scores') });
+assert.equal(e.status, 500);
+assert.match((await e.json()).error, /No D1 database bound as DB/);
+const bare = { DB: { prepare() { return { bind() { return this; }, async all() { throw new Error('D1_ERROR: no such table: players: SQLITE_ERROR'); }, async first() { throw new Error('no such table: players'); }, async run() { throw new Error('no such table: players'); } }; } } };
+e = await onRequestGet({ env: bare, request: new Request('https://x/api/scores') });
+assert.match((await e.json()).error, /players table is missing/);
 console.log('scores function tests ok');

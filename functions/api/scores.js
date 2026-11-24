@@ -45,9 +45,20 @@ export function merge(db, rec, wk = weekOf()) {
     .bind(rec.id, rec.name, rec.best, run, wk).run();
 }
 
-export async function onRequestGet({ request, env }) {
+// Setup problems answer with a readable error instead of Cloudflare's bare "1101 Worker threw exception".
+async function guarded(env, work) {
+  if (!env.DB) return json({ error: 'No D1 database bound as DB: Pages project > Settings > Bindings > add D1 "DB", then redeploy.' }, 500);
+  try {
+    return await work();
+  } catch (e) {
+    const msg = String(e?.message ?? e);
+    return json({ error: /no such table/i.test(msg) ? 'The players table is missing: run db/schema.sql in the D1 console.' : `Database error: ${msg}` }, 500);
+  }
+}
+
+export function onRequestGet({ request, env }) {
   const url = new URL(request.url);
-  return json(await board(env.DB, url.searchParams.get('id'), url.searchParams.get('period') === 'week' ? 'week' : 'all'));
+  return guarded(env, async () => json(await board(env.DB, url.searchParams.get('id'), url.searchParams.get('period') === 'week' ? 'week' : 'all')));
 }
 
 export async function onRequestPost({ request, env }) {
@@ -56,6 +67,8 @@ export async function onRequestPost({ request, env }) {
   let rec;
   try { rec = clean(JSON.parse(raw)); } catch { rec = null; }
   if (!rec) return json({ error: 'bad score' }, 400);
-  await merge(env.DB, rec);
-  return json(await board(env.DB, rec.id));
+  return guarded(env, async () => {
+    await merge(env.DB, rec);
+    return json(await board(env.DB, rec.id));
+  });
 }
