@@ -148,6 +148,10 @@ h2 { margin: 0; font-size: 58px; line-height: 1; font-weight: 800; color: var(--
 .badge { margin: 0; background: var(--red); color: #fff; padding: 6px 18px; border-radius: 999px; font-weight: 800; letter-spacing: 1px; }
 .stats { width: 100%; display: grid; gap: 4px; }
 .stats div { display: flex; justify-content: space-between; font-size: 18px; border-bottom: 2px dashed #e0d6c8; padding: 4px 2px; }
+.lag-ask { gap: 8px; padding: 12px 14px; }
+.lag-ask p { margin: 0; font-weight: 800; font-size: 18px; text-align: center; }
+.lag-ask div { display: flex; gap: 10px; }
+.lag-ask .btn { min-height: 48px; font-size: 18px; }
 .over-caption { margin: 2px 0 0; font-style: italic; font-size: 19px; color: #5a4f4a; }
 
 @keyframes pop {

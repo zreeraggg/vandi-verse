@@ -20,11 +20,13 @@ const store = {
 
 // ---------- renderer, scene, world
 // Settings (menu gear): reduce = no shake / zoom / speed lines / crash push-in; low = 1x pixels, no shadows, less rain.
-// Low starts on for phones that look low-end (<= 4 GB RAM or <= 4 cores) until the player picks; watchFps() can also switch it on.
-const LOW_END = (navigator.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4;
+// Everyone starts on full graphics and motion; only the player turns them down (settings, or the lag question).
+// Reduce still follows the phone's own "reduce motion" accessibility switch, since the player set that themselves.
+// One-time reset: older builds switched low on by themselves, so those saved values aren't the player's choice.
+if (store.get('krb-gfx-reset', '0') !== '1') { store.set('krb-low', '0'); store.set('krb-gfx-reset', '1'); }
 const settings = {
   reduce: store.get('krb-reduce', matchMedia('(prefers-reduced-motion: reduce)').matches ? '1' : '0') === '1',
-  low: store.get('krb-low', LOW_END ? '1' : '0') === '1',
+  low: store.get('krb-low', '0') === '1',
   music: +store.get('krb-music', '0.8'),
   sfx: +store.get('krb-sfx', '1'),
 };
@@ -886,6 +888,7 @@ function showOver() {
   $('over-caption').textContent = `“${caption}”`;
   queue(isBest && m > 0 ? 'new_best' : 'gameover');
   screens.over.dataset.caption = caption;
+  askLag();
   show('over');
 }
 
@@ -894,7 +897,7 @@ $('play').onclick = () => go(false);
 $('again').onclick = () => start(daily);
 // Instant retry: a tap anywhere on the game-over screen except its buttons. The short guard stops a swipe
 // that was still in flight when you crashed from skipping the result.
-screens.over.addEventListener('click', (e) => { if (!e.target.closest('button') && performance.now() - overAt > 700) start(daily); });
+screens.over.addEventListener('click', (e) => { if (!e.target.closest('button, .lag-ask') && performance.now() - overAt > 700) start(daily); });
 $('home').onclick = home;
 $('quit').onclick = home;
 $('pause').onclick = pause;
@@ -923,21 +926,28 @@ submitScore(); // resend on load in case the last post failed; the server keeps 
 
 // ---------- loop
 let last = performance.now();
-// Adaptive quality: a device that can't hold ~40 fps over 4 s of running drops to low graphics once, and remembers.
-let fpsT = 0, fpsN = 0;
+// Lag check: if a run can't hold ~40 fps over 4 s, the game-over screen asks once whether to lower graphics.
+// Never switches by itself: full graphics stay unless the player says yes here or in settings.
+let fpsT = 0, fpsN = 0, laggy = false;
 function watchFps(real) {
-  if (settings.low || state !== 'run' || real > 0.5) return; // pauses and tab switches don't count
+  if (laggy || settings.low || state !== 'run' || real > 0.5) return; // pauses and tab switches don't count
   fpsT += real;
   fpsN++;
   if (fpsT < 4) return;
-  if (fpsN / fpsT < 40) {
-    settings.low = true;
-    store.set('krb-low', '1');
-    setIn.low.checked = true;
-    applySettings();
-  }
+  if (fpsN / fpsT < 40) laggy = true;
   fpsT = fpsN = 0;
 }
+const lagAsk = $('lag-ask');
+function askLag() { lagAsk.classList.toggle('hidden', !(laggy && !settings.low && store.get('krb-lag-asked', '0') !== '1')); }
+function answerLag(low) {
+  store.set('krb-lag-asked', '1');
+  lagAsk.classList.add('hidden');
+  if (!low) return;
+  setIn.low.checked = true;
+  setIn.low.oninput();
+}
+$('lag-yes').onclick = () => answerLag(true);
+$('lag-no').onclick = () => answerLag(false);
 function frame(now) {
   watchFps((now - last) / 1000);
   const dt = Math.min(0.033, (now - last) / 1000);
