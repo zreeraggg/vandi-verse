@@ -20,12 +20,11 @@ const store = {
 
 // ---------- renderer, scene, world
 // Settings (menu gear): reduce = no shake / zoom / speed lines / crash push-in; low = 1x pixels, no shadows, less rain.
-// Everyone starts on full graphics and motion; only the player turns them down (settings, or the lag question).
-// Reduce still follows the phone's own "reduce motion" accessibility switch, since the player set that themselves.
+// Both start off. If the game lags or the browser drops WebGL, the game-over screen asks once to turn them on.
 // One-time reset: older builds switched low on by themselves, so those saved values aren't the player's choice.
 if (store.get('krb-gfx-reset', '0') !== '1') { store.set('krb-low', '0'); store.set('krb-gfx-reset', '1'); }
 const settings = {
-  reduce: store.get('krb-reduce', matchMedia('(prefers-reduced-motion: reduce)').matches ? '1' : '0') === '1',
+  reduce: store.get('krb-reduce', '0') === '1',
   low: store.get('krb-low', '0') === '1',
   music: +store.get('krb-music', '0.8'),
   sfx: +store.get('krb-sfx', '1'),
@@ -922,8 +921,8 @@ submitScore(); // resend on load in case the last post failed; the server keeps 
 
 // ---------- loop
 let last = performance.now();
-// Lag check: if a run can't hold ~40 fps over 4 s, the game-over screen asks once whether to lower graphics.
-// Never switches by itself: full graphics stay unless the player says yes here or in settings.
+// Lag check: if a run can't hold ~40 fps over 4 s, the game-over screen asks once to lower graphics + motion.
+// Never switches by itself: they stay off unless the player says yes here or in settings.
 let fpsT = 0, fpsN = 0, laggy = false;
 function watchFps(real) {
   if (laggy || settings.low || state !== 'run' || real > 0.5) return; // pauses and tab switches don't count
@@ -939,11 +938,11 @@ function answerLag(low) {
   store.set('krb-lag-asked', '1');
   lagAsk.classList.add('hidden');
   if (!low) return;
-  setIn.low.checked = true;
-  setIn.low.oninput();
+  for (const k of ['low', 'reduce']) if (!settings[k]) { setIn[k].checked = true; setIn[k].oninput(); }
 }
 $('lag-yes').onclick = () => answerLag(true);
 $('lag-no').onclick = () => answerLag(false);
+$('game').addEventListener('webglcontextlost', () => { laggy = true; }); // GPU gave up: browser is struggling, ask at game over
 function frame(now) {
   watchFps((now - last) / 1000);
   const dt = Math.min(0.033, (now - last) / 1000);

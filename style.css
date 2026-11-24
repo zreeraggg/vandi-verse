@@ -273,3 +273,6 @@ button.best { border: 0; cursor: pointer; font-family: var(--font); max-width: 7
 .set-row input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border: 3px solid var(--ink); border-radius: 50%; background: var(--red); box-shadow: 0 3px 0 var(--ink); }
 .set-row input[type="checkbox"] { width: 28px; height: 28px; flex: none; }
 .set-row input:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+.gh-link { display: flex; align-items: center; gap: 8px; min-height: 44px; color: var(--ink); font-weight: 800; font-size: 15px; text-decoration: underline 2px var(--red); text-underline-offset: 4px; }
+.gh-link svg { width: 22px; height: 22px; fill: var(--ink); }
+.gh-link:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; border-radius: 6px; }
