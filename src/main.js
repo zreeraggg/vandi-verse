@@ -918,7 +918,7 @@ $('share').onclick = async () => {
   const m = Math.floor(dist), title = G.titleFor(m);
   const dailyLabel = daily ? new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
   const blob = await makeCard({ m, title, daily: dailyLabel, shot, url: GAME_URL });
-  const text = `njan ${distLabel(m)} odi, Ninakku ${m + 1} m odaan pattuo? 😏\n${GAME_URL}`; // the message under the image; the link must live here, a shared PNG can't be clickable
+  const text = `njan ${distLabel(m)} odi, Ninakku ${m + 1} m odaan pattuo? 😏 ${GAME_URL}`; // the message under the image; the link must live here (a shared PNG can't be clickable), on the same line: WhatsApp's share drops text after a newline
   share(blob, text);
 };
 menuBest();
