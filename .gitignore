@@ -1,0 +1,27 @@
+# Live leaderboard: real players' names and scores. server.mjs creates it on first run.
+scores.json
+scores.json.tmp
+
+# Test/browser artefacts
+.playwright-mcp/
+
+# Unapproved sound candidates and full YouTube source rips (only the cut clips in assets/sounds ship)
+assets/sounds/candidates/
+
+# Original uncompressed models (15 MB, not served by the game)
+asset-backup/
+
+# Local AI-tool config
+.claude/
+.agents/
+.impeccable/
+skills-lock.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+node_modules/
+
+# Internal planning notes
+docs/superpowers/

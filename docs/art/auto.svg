@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" role="img" aria-label="An auto rickshaw with its blinker on">
+  <circle cx="70" cy="70" r="66" fill="#fff3d6" stroke="#1d1a1b" stroke-width="4"/>
+  <g transform="translate(14 30)">
+    <path d="M14 66 V30 Q14 4 46 4 H96 Q112 4 112 26 V66 Z" fill="#1d1a1b"/>
+    <path d="M4 66 Q4 40 30 38 H104 Q118 40 118 66 V78 H4 Z" fill="#ffcc33" stroke="#1d1a1b" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M18 38 L28 12 H56 V38 Z" fill="#bfe3f2" stroke="#1d1a1b" stroke-width="3"/>
+    <rect x="22" y="52" width="36" height="7" rx="3" fill="#2e9e4f"/>
+    <circle cx="26" cy="82" r="12" fill="#222" stroke="#1d1a1b" stroke-width="4"/><circle cx="100" cy="82" r="12" fill="#222" stroke="#1d1a1b" stroke-width="4"/>
+    <circle cx="8" cy="56" r="6" fill="#ff8800" stroke="#1d1a1b" stroke-width="2"/>
+  </g>
+</svg>

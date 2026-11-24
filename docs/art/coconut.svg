@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 140" role="img" aria-label="A green coconut falling">
+  <circle cx="70" cy="70" r="66" fill="#fff3d6" stroke="#1d1a1b" stroke-width="4"/>
+  <g stroke="#1d1a1b" stroke-width="5" stroke-linecap="round" opacity="0.6"><path d="M52 34 v-16"/><path d="M70 30 v-20"/><path d="M88 34 v-16"/></g>
+  <ellipse cx="70" cy="78" rx="32" ry="36" fill="#7c9a2e" stroke="#1d1a1b" stroke-width="5"/>
+  <path d="M56 60 q12 -12 26 -3" stroke="#b7d36a" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M70 42 v-8" stroke="#6d4c41" stroke-width="6" stroke-linecap="round"/>
+</svg>

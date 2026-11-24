@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#c62828" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Vandi-Verse</title>
+    <!-- link preview when the game URL is pasted on its own (WhatsApp, Telegram) -->
+    <meta property="og:title" content="Vandi-Verse: Kerala road runner game" />
+    <meta
+      property="og:description"
+      content="Bus, auto, theng: ellaam ozhivaakki odu."
+    />
+    <meta
+      name="description"
+      content="Vandi-Verse: a free Kerala road runner game in your browser. Dodge buses, autos and falling coconuts."
+    />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+Chettan+2:wght@500;700;800&family=Bungee&family=Doto:wght@800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <!-- After the import map (a modulepreload before it makes the browser ignore the map). Starts these downloads before main.js asks. -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="modulepreload"
+      href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    />
+    <link
+      rel="modulepreload"
+      href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
+    />
+    <link rel="modulepreload" href="src/main.js" />
+    <link rel="modulepreload" href="src/world.js" />
+    <!-- The hero's painted textures otherwise start only after hero.glb is parsed. crossorigin matches three's TextureLoader, so the preload is reused. -->
+    <link
+      rel="preload"
+      as="image"
+      href="assets/textures/hero_front.jpg"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="assets/textures/hero_back.jpg"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="assets/textures/hero_side.jpg"
+      crossorigin="anonymous"
+    />
+    <!-- Loader styles inline so it paints before style.css, fonts or any JS arrive -->
+    <style>
+      #loader {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        padding: 16px;
+        background: linear-gradient(#3d5aa8, #e98a4f 75%, #ffcc33);
+        transition:
+          opacity 0.4s ease,
+          visibility 0.4s;
+      }
+      #loader.done {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      /* same paint as the home wordmark: yellow VANDI-, white VERSE, ink extrude, red shadow */
+      #loader h1 {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font:
+          400 clamp(46px, 14vw, 72px)/0.86 Bungee,
+          "Baloo Chettan 2",
+          system-ui,
+          sans-serif;
+        color: #ffcc33;
+        text-shadow:
+          3px 3px 0 #1d1a1b,
+          6px 6px 0 #1d1a1b,
+          9px 9px 0 #c62828;
+      }
+      #loader h1 span:last-child {
+        margin-left: 0.5em;
+        color: #fff;
+      }
+      #loader .bar {
+        position: relative;
+        width: min(78vw, 320px);
+        height: 18px;
+        border: 3px solid #1d1a1b;
+        border-radius: 12px;
+        background: #fff8ec;
+        box-shadow: 0 4px 0 #1d1a1b;
+        overflow: hidden;
+      }
+      /* moving stripes: the bar looks alive even while one big file is still downloading */
+      #bar-fill {
+        position: relative;
+        width: 8%;
+        height: 100%;
+        border-radius: 8px;
+        transition: width 0.3s ease;
+        background: repeating-linear-gradient(
+          -45deg,
+          #c62828 0 12px,
+          #e0453a 12px 24px
+        );
+        background-size: 34px 100%;
+        animation: stripes 0.7s linear infinite;
+      }
+      @keyframes stripes {
+        to {
+          background-position: 34px 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #bar-fill {
+          animation: none;
+        }
+      }
+      #loader-msg {
+        margin: 0;
+        padding: 2px 12px;
+        border-radius: 10px;
+        background: #fff8ec;
+        font:
+          700 16px "Baloo Chettan 2",
+          system-ui,
+          sans-serif;
+        color: #1d1a1b;
+      }
+    </style>
+    <script>
+      // A failed CDN/module load or a startup crash would leave the bar stuck: say so instead.
+      addEventListener(
+        "error",
+        (e) => {
+          if (e.target !== window && e.target.tagName !== "SCRIPT") return; // ignore e.g. a slow font
+          const m = document.getElementById("loader-msg");
+          if (m)
+            m.textContent = "Load aayilla. Net check cheythu refresh cheyyu.";
+        },
+        true,
+      );
+    </script>
+  </head>
+  <body>
+    <div id="loader" role="progressbar" aria-label="Loading Vandi-Verse">
+      <h1 data-impeccable-ignore="low-contrast" aria-label="Vandi-Verse">
+        <span>Vandi-</span><span>Verse</span>
+      </h1>
+      <!-- same paint as the menu wordmark -->
+      <div class="bar"><div id="bar-fill"></div></div>
+    </div>
+    <canvas id="game"></canvas>
+
+    <!-- HUD -->
+    <div id="speed" class="speed" aria-hidden="true"></div>
+    <!-- speed lines while the mundu fold boosts you -->
+    <div id="hud" class="hidden">
+      <div class="hud-top">
+        <button id="pause" class="icon-btn" aria-label="Pause">
+          <span></span><span></span>
+        </button>
+        <div class="hud-right">
+          <div id="dist" class="dist">0 m</div>
+          <div id="wallet" class="coins">
+            <i class="coin-ico">₹</i><span id="coin-num">0</span>
+          </div>
+          <div id="to-best" class="to-best"></div>
+        </div>
+      </div>
+      <div id="caption" class="caption"></div>
+      <div class="hud-bottom">
+        <div id="mundu" class="mundu-pill">
+          <span id="mundu-label">Mundu</span>
+          <span id="grip" class="grip" aria-label="Mundu grip"
+            ><i></i><i></i><i></i
+          ></span>
+        </div>
+      </div>
+      <p id="tip" class="tip hidden"><kbd>Tap ×3</kbd>Madakki kuthu</p>
+      <div id="ghost" class="ghost hidden" aria-live="polite">
+        <span class="ghost-hand" aria-hidden="true">👆</span>
+        <p id="ghost-text"></p>
+      </div>
+    </div>
+
+    <!-- Start -->
+    <div id="menu" class="screen">
+      <div class="menu-top">
+        <button id="best" class="best" aria-label="Change your name"></button>
+        <div class="menu-icons">
+          <button
+            id="settings-btn"
+            class="icon-btn mute gear"
+            aria-label="Settings"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+              />
+            </svg>
+          </button>
+          <button id="mute" class="icon-btn mute" aria-label="Sound">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path class="spk" d="M4 9h3l5-4v14l-5-4H4z" />
+              <path
+                class="waves"
+                d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"
+              />
+              <path class="off" d="M16 9l5 6M21 9l-5 6" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="title-block">
+        <h1 aria-label="Vandi-Verse"><span>Vandi-</span><span>Verse</span></h1>
+        <div class="board" aria-label="Private bus-nu brake illa. Ninakkum.">
+          <div class="led">
+            <p aria-hidden="true">
+              <span>Private bus-nu brake illa. Ninakkum.</span
+              ><span>Private bus-nu brake illa. Ninakkum.</span>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="menu-bottom">
+        <button
+          id="play"
+          class="btn primary"
+          data-impeccable-ignore="low-contrast"
+        >
+          Play</button
+        ><!-- white on yellow carried by the ink extrude, matching the wordmark (user-picked colours) -->
+        <button id="board-btn" class="link-btn">Leaderboard</button>
+      </div>
+    </div>
+
+    <!-- Name: asked once, before the first run -->
+    <div id="name" class="screen center hidden">
+      <form id="name-form" class="panel" novalidate>
+        <h2 class="title-sm" data-impeccable-ignore="low-contrast">
+          Ninte peru?
+        </h2>
+        <label for="name-input" class="note"
+          >Leaderboard-il ee peru ellarum kaanum. Real peru venda, nickname
+          mathi.</label
+        >
+        <input
+          id="name-input"
+          class="field"
+          maxlength="16"
+          autocomplete="nickname"
+          enterkeyhint="go"
+          placeholder="Eg: Thrissur Express"
+        />
+        <p id="name-err" class="err" role="alert"></p>
+        <button class="btn primary">Save cheyyu</button>
+        <button type="button" id="name-back" class="btn back" aria-label="Back">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 5v6a4 4 0 0 1-4 4H6M10 11l-4 4 4 4" />
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <!-- Leaderboard -->
+    <div id="board" class="screen lb hidden">
+      <h2 class="lb-title" data-impeccable-ignore="low-contrast">
+        Top odunnavar
+      </h2>
+      <div class="lb-tabs" role="tablist" aria-label="Leaderboard period">
+        <button id="tab-all" role="tab" aria-selected="true">
+          Ellaa kaalavum
+        </button>
+        <button id="tab-week" role="tab" aria-selected="false">
+          Ee aazhcha
+        </button>
+      </div>
+      <p id="board-me" class="lb-strip"></p>
+      <ol id="board-list" class="rank-list"></ol>
+      <div class="lb-actions">
+        <button id="board-home" class="btn back" aria-label="Back">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 5v6a4 4 0 0 1-4 4H6M10 11l-4 4 4 4" />
+          </svg>
+        </button>
+        <button type="button" id="board-rename" class="btn">Peru maattu</button>
+      </div>
+    </div>
+
+    <!-- Pause -->
+    <div id="paused" class="screen center hidden">
+      <div class="panel">
+        <h2 data-impeccable-ignore="low-contrast">Chaya break ☕</h2>
+        <!-- yellow with a 2px ink outline (--ink-stroke); detector ignores text-shadow -->
+        <button
+          id="resume"
+          class="btn primary"
+          data-impeccable-ignore="low-contrast"
+        >
+          Thudaru
+        </button>
+        <button id="quit" class="btn back" aria-label="Home">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3.5 11 12 3.5l8.5 7.5M6 9.5V20h4.5v-5.5h3V20H18V9.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Game over -->
+    <div id="over" class="screen center hidden">
+      <div class="panel">
+        <p id="reaction" class="reaction"></p>
+        <h2 id="over-dist" data-impeccable-ignore="low-contrast"></h2>
+        <p id="over-title" class="badge"></p>
+        <div class="stats">
+          <div><span>Chillara pirichathu</span><b id="over-coins"></b></div>
+          <div><span>Best</span><b id="over-best"></b></div>
+        </div>
+        <p id="over-caption" class="over-caption"></p>
+      </div>
+      <button
+        id="again"
+        class="btn primary"
+        data-impeccable-ignore="low-contrast"
+      >
+        veendum Run
+      </button>
+      <button id="share" class="btn whatsapp">WhatsApp-il share</button>
+      <button id="home" class="btn back" aria-label="Home">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3.5 11 12 3.5l8.5 7.5M6 9.5V20h4.5v-5.5h3V20H18V9.5" />
+        </svg>
+      </button>
+      <p class="retry-hint">Screen-il evide thottalum veendum odaam</p>
+    </div>
+
+    <!-- Settings -->
+    <div id="settings" class="screen center hidden">
+      <div class="panel settings">
+        <h2 class="title-sm" data-impeccable-ignore="low-contrast">
+          Ishtam pole
+        </h2>
+        <label class="set-row"
+          ><span>Paattu<small>Background music</small></span
+          ><input id="set-music" type="range" min="0" max="1" step="0.05"
+        /></label>
+        <label class="set-row"
+          ><span>Sound<small>Horn, coin, dialogue</small></span
+          ><input id="set-sfx" type="range" min="0" max="1" step="0.05"
+        /></label>
+        <label class="set-row check"
+          ><span>Kuravu motion<small>Shake, zoom, speed lines off</small></span
+          ><input id="set-reduce" type="checkbox"
+        /></label>
+        <label class="set-row check"
+          ><span
+            >Low graphics<small>Cheap phones: no shadows, faster</small></span
+          ><input id="set-low" type="checkbox"
+        /></label>
+        <button
+          type="button"
+          id="settings-back"
+          class="btn back"
+          aria-label="Back"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 5v6a4 4 0 0 1-4 4H6M10 11l-4 4 4 4" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
