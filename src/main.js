@@ -910,7 +910,7 @@ muteBtn.onclick = () => {
 };
 muteLabel();
 // shortcut: hardcoded dev-tunnel URL, swap when the game gets a real domain
-const GAME_URL = 'https://kh55wr2c-5500.inc1.devtunnels.ms/';
+const GAME_URL = 'https://vandi-verse.pages.dev/';
 $('share').onclick = async () => {
   const m = Math.floor(dist), title = G.titleFor(m);
   const dailyLabel = daily ? new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
