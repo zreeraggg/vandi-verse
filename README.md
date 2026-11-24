@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://kh55wr2c-5500.inc1.devtunnels.ms/"><img src="https://img.shields.io/badge/▶_PLAY_NOW-in_your_browser-ffcc33?style=for-the-badge&labelColor=c62828" alt="Play now in your browser"></a>
+  <a href="https://vandi-verse.pages.dev/"><img src="https://img.shields.io/badge/▶_PLAY_NOW-in_your_browser-ffcc33?style=for-the-badge&labelColor=c62828" alt="Play now in your browser"></a>
 </p>
 
 <p align="center">
