@@ -4,7 +4,7 @@ import { createDog } from './dog.js';
 import { createWorld, loadModels, laneX, ROAD_W, SPAWN_Z, LANE_W, CROWN_Y } from './world.js';
 import { createFx, CURVE, basic, TIME } from './fx.js';
 import * as G from './logic.js';
-import { makeCard, share, distLabel } from './share.js';
+import { share, distLabel } from './share.js';
 import { loadSounds, play, queue, stopVoice, music, setVolume, spatial } from './sounds.js';
 
 const $ = (id) => document.getElementById(id);
@@ -267,7 +267,7 @@ const COIN_SFX = { 1: [880], 5: [1568, 2093] };
 // ---------- game state
 let state = 'menu'; // menu | run | paused | dead | over
 let dist = 0, puffs = 0, collected, lane = 1, px = 0, py = 0, vy = 0, slideT = 0, slideQueued, mundu = G.createMundu();
-let nextRowDist, clearLane = -1, rowRng, deadT, cause, shot, daily, shake = 0;
+let nextRowDist, clearLane = -1, rowRng, deadT, cause, daily, shake = 0;
 let jumpAt = -9, openLanes = [0, 1, 2]; // jumpAt: when 'up' was pressed in the air, replayed on landing
 let streak = 0, lastCoinT = -9, passedBest = false, rainAt = Infinity, overAt = 0;
 const objs = [], coins = [];
@@ -293,7 +293,6 @@ function reset(isDaily) {
   daily = isDaily;
   rowRng = G.rng(isDaily ? G.dailySeed() : (Math.random() * 2 ** 32) >>> 0);
   dist = collected = puffs = 0;
-  shot = null;
   lane = 1; px = py = vy = slideT = 0;
   slideQueued = false;
   jumpAt = -9;
@@ -914,12 +913,9 @@ muteBtn.onclick = () => {
 muteLabel();
 // shortcut: hardcoded dev-tunnel URL, swap when the game gets a real domain
 const GAME_URL = 'https://vandi-verse.pages.dev/';
-$('share').onclick = async () => {
-  const m = Math.floor(dist), title = G.titleFor(m);
-  const dailyLabel = daily ? new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
-  const blob = await makeCard({ m, title, daily: dailyLabel, shot, url: GAME_URL });
-  const text = `njan ${distLabel(m)} odi, Ninakku ${m + 1} m odaan pattuo? 😏 ${GAME_URL}`; // the message under the image; the link must live here (a shared PNG can't be clickable), on the same line: WhatsApp's share drops text after a newline
-  share(blob, text);
+$('share').onclick = () => {
+  const m = Math.floor(dist);
+  share(`njan ${distLabel(m)} odi, Ninakku ${m + 1} m odaan pattuo? 😏 ${GAME_URL}`);
 };
 menuBest();
 submitScore(); // resend on load in case the last post failed; the server keeps the max
@@ -990,8 +986,6 @@ function frame(now) {
   for (const c of coins) c.mesh.rotation.y += dt * 4;
   updateCamera(dt);
   renderer.render(scene, camera);
-  // Grab the crash frame for the share card (same task as render, so no preserveDrawingBuffer needed).
-  if (state === 'dead' && deadT > 0.8 && !shot) shot = renderer.domElement.toDataURL('image/jpeg', 0.8);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
