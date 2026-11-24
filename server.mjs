@@ -5,6 +5,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
+import { weekOf, clean } from './functions/_shared/score-rules.js'; // same rules as the Cloudflare function
+export { weekOf, clean };
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DB = process.env.SCORES ? path.resolve(process.env.SCORES) : path.join(ROOT, 'scores.json'); // SCORES: test file
@@ -19,24 +21,6 @@ const TYPES = {
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.glb': 'model/gltf-binary',
   '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.m4a': 'audio/mp4', '.woff2': 'font/woff2',
 };
-
-// Week number, weeks starting Monday 00:00 UTC (day 0 of the epoch was a Thursday, hence +3).
-export const weekOf = (ms = Date.now()) => Math.floor((ms / 86400000 + 3) / 7);
-const isScore = (v) => Number.isInteger(v) && v >= 0 && v <= 200000;
-
-// Validates one submission from the browser (untrusted). Returns a clean record or null.
-// best = the player's all-time best; run (optional) = the run just finished, for the weekly board.
-export function clean(body) {
-  if (!body || typeof body !== 'object') return null;
-  const { id, name, best, run } = body;
-  if (typeof id !== 'string' || !/^[a-z0-9]{8,32}$/.test(id)) return null;
-  if (typeof name !== 'string') return null;
-  const n = name.replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16);
-  if (!n) return null;
-  // shortcut: trusts the client's distance (anyone can POST a fake score); add server-side run checks if cheating shows up
-  if (!isScore(best) || (run !== undefined && !isScore(run))) return null;
-  return run === undefined ? { id, name: n, best } : { id, name: n, best, run };
-}
 
 // Keeps each player's highest score (all-time, plus this week's best run as wk/wbest); the name always updates.
 export function merge(db, rec, wk = weekOf()) {

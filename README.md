@@ -104,21 +104,36 @@ PowerShell: `$env:PORT=8080; node server.mjs`. If port 5500 is busy, stop VS Cod
 ```bash
 node test/logic.test.mjs
 node test/server.test.mjs
+node test/scores-function.test.mjs   # the Cloudflare leaderboard, against SQLite (Node 22.5+)
 ```
 
 `tools/autoplay.js` is a dev check: inject it with Playwright and a bot plays the real game (to 3 km by default, or `localStorage['autoplay-target']`), reporting crashes, overlapping vehicles, impossible rows and draw calls. It never posts scores. With `localStorage['autoplay-capture']` set to a distance, it pauses there so you can step frames and screenshot them (that's how the GIF above was made).
+
+## Deploy on Cloudflare Pages (with the leaderboard)
+
+The game files are static; the leaderboard is a Pages Function (`functions/api/scores.js`) that stores scores in a Cloudflare D1 database. No build step.
+
+1. **Database**: Cloudflare dashboard → Storage & Databases → **D1** → Create database (e.g. `vandi-verse-scores`). Open its **Console**, paste the contents of `db/schema.sql`, and run it.
+2. **Pages project**: Workers & Pages → Create → **Pages** → Connect to Git → pick this repo. Framework preset **None**, build command **empty**, build output directory **`/`**. Save and deploy.
+3. **Connect the database**: the Pages project → Settings → **Bindings** → Add → D1 database. Variable name **`DB`**, pick the database. Add it for Production (and Preview if you use preview deploys).
+4. **Redeploy** (Deployments → latest → Retry deployment) so the binding takes effect.
+5. **Check**: open `https://<your-project>.pages.dev/api/scores`. It should answer `{"top":[],"me":null,"players":0}`.
+
+Every push to `main` deploys again on its own. `node server.mjs` still works for local play, with scores in `scores.json`.
 
 ## Tech stack
 
 - **Engine**: [three.js](https://threejs.org/) r160 from the jsDelivr CDN, with Draco-compressed `.glb` models and a curved-world shader.
 - **Code**: plain HTML, CSS and JavaScript ES modules. No framework, no bundler.
 - **Audio**: Web Audio. Bus horns fade in and out as buses pass, with a Doppler pitch shift.
-- **Server**: `server.mjs`, a dependency-free Node server for the game and the leaderboard API (`/api/scores`, all-time and weekly).
+- **Server**: `server.mjs`, a dependency-free Node server for local play and the leaderboard API (`/api/scores`, all-time and weekly). On Cloudflare Pages the same API is `functions/api/scores.js` with a D1 (SQLite) database; both share the rules in `functions/_shared/score-rules.js`.
 - **Phones first**: low graphics (1× pixels, no shadows, less rain) switch on by themselves on low-end phones and on any device that can't hold about 40 fps in a run. Scenery is merged into a few hundred draw calls, and portrait screens get their own home-screen camera.
 
 ```
 index.html, style.css   page and UI
-server.mjs              static server + leaderboard API
+server.mjs              local static server + leaderboard API
+functions/api/scores.js Cloudflare Pages leaderboard (D1)
+db/schema.sql           D1 table, run once
 src/main.js             game loop, input, UI, scores
 src/logic.js            pure game rules (tested)
 src/world.js            road, scenery, vehicles, coins
